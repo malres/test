@@ -23,6 +23,7 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
+//定义一个结构体，并取名为workerdata。相当于自定义一个数据类型
 typedef struct {
     int fd;
     ANativeWindow* window;
@@ -37,6 +38,7 @@ typedef struct {
 
 workerdata data = {-1,NULL,NULL,NULL,0, false, false, false, false};
 
+//enum：枚举。所谓枚举是指将变量的值一一列举出来，变量只限于列举出来的值的范围内取值。
 enum {
     kMsgCodecBuffer,
     kMsgPause,
@@ -45,7 +47,8 @@ enum {
     kMsgDecodeDone,
     kMsgSeek,
 };
-
+//mylooper继承自looper
+//virtual：定义虚函数的关键字
 class mylooper: public looper{
     virtual void handle(int what, void* obj);
 };
