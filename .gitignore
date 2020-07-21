@@ -9,6 +9,7 @@
 *.Ds_Store
 local.properties
 
+.idea/
 .gradle/
 .navigation/
 
