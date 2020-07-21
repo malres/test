@@ -46,6 +46,7 @@ public class MainActivity extends Activity {
     //Activity生命周期的开始
     //savedInstanceState作用：保存Activity状态数据
     //与icicle的区别：简单来说就是icicle是小map，savedInstanceState是大map
+    //setContentView：在activity启动时通过setContentView将指定的资源xml文件加载到对应的activity中
     @Override
     protected void onCreate(Bundle icicle) {
         super.onCreate(icicle);
@@ -111,11 +112,13 @@ public class MainActivity extends Activity {
             //在onItemSelected中parent是你当前所操作的Spinner，当某一个Activity中有多个Spinner时，可以根据
             // parent.getId()与R.id.currentSpinner是否相等，来判断是否你当前操作的Spinner，通过
             // switch...case...语句来解决多个Spinner的情况
+            //通过getItemAtPosition获取到item中的值然后拿到文件
             public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
                 mSourceString = parent.getItemAtPosition(pos).toString();
                 Log.v(TAG, "onItemSelected " + mSourceString);
             }
 
+            //当Adapter为空的时候调用此方法
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 Log.v(TAG, "onNothingSelected");
@@ -123,25 +126,31 @@ public class MainActivity extends Activity {
             }
         });
 
+
         mRadio1 = (RadioButton) findViewById(R.id.radio1);
         mRadio2 = (RadioButton) findViewById(R.id.radio2);
-
         //此处OnCheckedChangeListener报红的，到头部手动导入下面这个包：
         //import android.widget.CompoundButton.OnCheckedChangeListener;
-        OnCheckedChangeListener checklistener = new CompoundButton.OnCheckedChangeListener(){
-
+        //isChecked用于检测控件是否选中
+        OnCheckedChangeListener checklistener = new CompoundButton.OnCheckedChangeListener()
+        {
             @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+            {
                 Log.i("@@@", "onCheckedChanged");
-                if (buttonView == mRadio1 && isChecked){
+                if (buttonView == mRadio1 && isChecked)
+                {
                     mRadio2.setChecked(false);
                 }
-                if (buttonView == mRadio2 && isChecked){
+                if (buttonView == mRadio2 && isChecked)
+                {
                     mRadio1.setChecked(false);
                 }
                 if (isChecked){
-                    if (mRadio1.isChecked()){
-                        if (mSurfaceHolder1VideoSink == null){
+                    if (mRadio1.isChecked())
+                    {
+                        if (mSurfaceHolder1VideoSink == null)
+                        {
                             mSurfaceHolder1VideoSink = new SurfaceHolderVideoSink(mSurfaceHolder1);
                         }
                         mSelectedVideoSink = mSurfaceHolder1VideoSink;
@@ -162,39 +171,48 @@ public class MainActivity extends Activity {
         mRadio1.setOnCheckedChangeListener(checklistener);
         mRadio2.setOnCheckedChangeListener(checklistener);
         mRadio2.toggle();
-
+        //toggle()：防止setOnCheckedChangeListener调用多次方法
         //与单选按钮相比，suefaces更容易成为目标
-        mSurfaceView1.setOnClickListener(new View.OnClickListener(){
-
+        //以下为surfaceview1的监听事件
+        mSurfaceView1.setOnClickListener(new View.OnClickListener()
+        {
             @Override
-            public void onClick(View v) {
+            public void onClick(View v)
+            {
                 mRadio1.toggle();
             }
         });
-        mGLView1.setOnClickListener(new View.OnClickListener(){
-
+        mGLView1.setOnClickListener(new View.OnClickListener()
+        {
             @Override
-            public void onClick(View view) {
+            public void onClick(View view)
+            {
                 mRadio2.toggle();
             }
         });
 
         //初始化按钮单击处理
         //native MediaPlayer start/pause
-        ((Button) findViewById(R.id.start_native)).setOnClickListener(new View.OnClickListener(){
-
+        //通过findViewById找到start_native并给它设置一个点击监听事件
+        ((Button) findViewById(R.id.start_native)).setOnClickListener(new View.OnClickListener()
+        {
             @Override
-            public void onClick(View view) {
-                if (!mCreated){
-                    if (mNativeCodecPlayerVideoSink == null){
-                        if (mSelectedVideoSink == null){
+            public void onClick(View view)
+            {
+                if (!mCreated)
+                {
+                    if (mNativeCodecPlayerVideoSink == null)
+                    {
+                        if (mSelectedVideoSink == null)
+                        {
                             return;
                         }
                         mSelectedVideoSink.useAsSinkForNative();
                         mNativeCodecPlayerVideoSink = mSelectedVideoSink;
                     }
-                    if (mSourceString != null){
-                        mCreated = createStreamingMediaPlayer(getResources().getAssets(),mSourceString);
+                    if (mSourceString != null)
+                    {
+                        mCreated = createStreamingMediaPlayer(getResources().getAssets(), mSourceString);
                     }
                 }
                 if (mCreated){
@@ -205,12 +223,13 @@ public class MainActivity extends Activity {
         });
 
         //native MediaPlayer rewind
+        //通过rewind_native找到暂停播放按钮rewind_native并设置一个监听事件
         ((Button) findViewById(R.id.rewind_native)).setOnClickListener(new View.OnClickListener(){
 
             @Override
             public void onClick(View view) {
                 if (mNativeCodecPlayerVideoSink != null){
-                    rewindStreamingMediaPlayer();
+                    rewindStreamingMediaPlayer();  //此语句用于视频倒带
                 }
             }
 
@@ -219,7 +238,6 @@ public class MainActivity extends Activity {
 
     void switchSurface(){
         if (mCreated && mNativeCodecPlayerVideoSink != mSelectedVideoSink){
-
             //关闭并在其他surface上重新创建
             Log.i("@@@", "shutting down player");
             shutdown();
