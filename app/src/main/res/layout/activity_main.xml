@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dip"
+        >
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/source_select"
+            />
+        <Spinner
+            android:id="@+id/source_spinner"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/source_prompt"
+            />
+    </LinearLayout>
+
+<!--    暂停、播放按钮-->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:id="@+id/start_native"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/start_native"
+            />
+        <Button
+            android:id="@+id/rewind_native"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/rewind_native"
+            />
+    </LinearLayout>
+
+<!--    视频播放幕布-->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/radio1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dip"
+            />
+        <SurfaceView
+            android:id="@+id/surfaceview1"
+            android:layout_width="640px"
+            android:layout_height="480px"/>
+    </LinearLayout>
+
+<!--    进度条-->
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.AppCompatSeekBar
+            android:layout_width="800px"
+            android:layout_height="80px" />
+    </LinearLayout>
+
+    //第二个幕布
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/radio2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="10dip"
+            />
+        <com.example.nativecodec.MyGLSurfaceView
+            android:id="@+id/glsurfaceview1"
+            android:layout_width="640px"
+            android:layout_height="480px"
+            />
+
+    </LinearLayout>
+
+
+
+</LinearLayout>
