@@ -1,7 +1,5 @@
 package com.example.nativecodec;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
 import android.content.res.AssetManager;
@@ -15,13 +13,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.RadioButton;
 import android.widget.Spinner;
-import android.widget.TextView;
 
-import java.io.IOException;
 
 public class MainActivity extends Activity {
     static final String TAG = "NativeCodec";
@@ -35,7 +28,6 @@ public class MainActivity extends Activity {
     VideoSink mNativeCodecPlayerVideoSink;
 
     SurfaceHolderVideoSink mSurfaceHolder1VideoSink;
-    GLViewVideoSink mGLView1VideoSink;
     //GLSurfaceView继承自SurfaceView,对SurfaceView再次封装，方便在安卓中使用OpenGL
 
     boolean mCreated = false;
@@ -52,9 +44,6 @@ public class MainActivity extends Activity {
         super.onCreate(icicle);
         setContentView(R.layout.activity_main);
 
-        //第二块幕布
-        mGLView1 = (MyGLSurfaceView) findViewById(R.id.glsurfaceview1);
-
         //设置surface1接收器
         //使用Android的findViewById查找到第一块幕布的所在地，并赋值给mSurfaceView1
         mSurfaceView1 = (SurfaceView) findViewById(R.id.surfaceview1);
@@ -69,10 +58,7 @@ public class MainActivity extends Activity {
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
                 Log.v(TAG,"surfaceCreated");
-                if (mRadio1.isChecked()){
-                    //跳转到setSurface
-                    setSurface(holder.getSurface());
-                }
+                setSurface(holder.getSurface());
             }
 
             //加载    format格式
@@ -127,91 +113,38 @@ public class MainActivity extends Activity {
         });
 
 
-        mRadio1 = (RadioButton) findViewById(R.id.radio1);
-        mRadio2 = (RadioButton) findViewById(R.id.radio2);
-        //此处OnCheckedChangeListener报红的，到头部手动导入下面这个包：
-        //import android.widget.CompoundButton.OnCheckedChangeListener;
-        //isChecked用于检测控件是否选中
-        OnCheckedChangeListener checklistener = new CompoundButton.OnCheckedChangeListener()
-        {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-            {
-                Log.i("@@@", "onCheckedChanged");
-                if (buttonView == mRadio1 && isChecked)
-                {
-                    mRadio2.setChecked(false);
-                }
-                if (buttonView == mRadio2 && isChecked)
-                {
-                    mRadio1.setChecked(false);
-                }
-                if (isChecked){
-                    if (mRadio1.isChecked())
-                    {
-                        if (mSurfaceHolder1VideoSink == null)
-                        {
-                            mSurfaceHolder1VideoSink = new SurfaceHolderVideoSink(mSurfaceHolder1);
-                        }
-                        mSelectedVideoSink = mSurfaceHolder1VideoSink;
-                        mGLView1.onPause();
-                        Log.i("@@@", "glview pause");
-                    }else{
-                        mGLView1.onResume();
-                        if (mGLView1VideoSink == null){
-                            mGLView1VideoSink = new GLViewVideoSink(mGLView1);
-                        }
-                        mSelectedVideoSink = mGLView1VideoSink;
-                    }
-                    switchSurface();
-                }
-            }
-        };
+        mSurfaceHolder1VideoSink = new SurfaceHolderVideoSink(mSurfaceHolder1);
+        mSelectedVideoSink = mSurfaceHolder1VideoSink;
+        Log.i("@@@", "glview pause");
+        switchSurface();
 
-        mRadio1.setOnCheckedChangeListener(checklistener);
-        mRadio2.setOnCheckedChangeListener(checklistener);
-        mRadio2.toggle();
         //toggle()：防止setOnCheckedChangeListener调用多次方法
         //与单选按钮相比，suefaces更容易成为目标
         //以下为surfaceview1的监听事件
         mSurfaceView1.setOnClickListener(new View.OnClickListener()
         {
             @Override
-            public void onClick(View v)
-            {
-                mRadio1.toggle();
-            }
-        });
-        mGLView1.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View view)
-            {
-                mRadio2.toggle();
+            public void onClick(View v) {
             }
         });
 
+
         //初始化按钮单击处理
-        //native MediaPlayer start/pause
+        //native MediaPlayer start
         //通过findViewById找到start_native并给它设置一个点击监听事件
         ((Button) findViewById(R.id.start_native)).setOnClickListener(new View.OnClickListener()
         {
             @Override
-            public void onClick(View view)
-            {
-                if (!mCreated)
-                {
-                    if (mNativeCodecPlayerVideoSink == null)
-                    {
-                        if (mSelectedVideoSink == null)
-                        {
+            public void onClick(View view) {
+                if (!mCreated) {
+                    if (mNativeCodecPlayerVideoSink == null) {
+                        if (mSelectedVideoSink == null) {
                             return;
                         }
                         mSelectedVideoSink.useAsSinkForNative();
                         mNativeCodecPlayerVideoSink = mSelectedVideoSink;
                     }
-                    if (mSourceString != null)
-                    {
+                    if (mSourceString != null) {
                         mCreated = createStreamingMediaPlayer(getResources().getAssets(), mSourceString);
                     }
                 }
@@ -223,7 +156,7 @@ public class MainActivity extends Activity {
         });
 
         //native MediaPlayer rewind
-        //通过rewind_native找到暂停播放按钮rewind_native并设置一个监听事件
+        //通过rewind_native找到按钮rewind_native并设置一个监听事件
         ((Button) findViewById(R.id.rewind_native)).setOnClickListener(new View.OnClickListener(){
 
             @Override
@@ -234,6 +167,40 @@ public class MainActivity extends Activity {
             }
 
         });
+
+        //暂停播放
+        ((Button) findViewById(R.id.pause_native)).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mNativeCodecPlayerVideoSink != null){
+                    pauseStreamingMediaPlayer();
+                }
+            }
+        });
+
+
+        //关于seekbar的方法
+//        ((SeekBar)findViewById(R.id.seekbar_1)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+//            //进度条开始拖动的时候调用
+//            @Override
+//            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+//                int process = seekBar.getProgress();
+//                System.out.println(process);
+//            }
+//
+//            //进度条改变的时候调用
+//            @Override
+//            public void onStartTrackingTouch(SeekBar seekBar) {
+//                System.out.println("start:=>" + seekBar.getProgress());
+//            }
+//
+//            //进度条停止拖动的时候调用
+//            @Override
+//            public void onStopTrackingTouch(SeekBar seekBar) {
+//                System.out.println("stop:=>" + seekBar.getProgress());
+//            }
+//        });
+
     }
 
     void switchSurface(){
@@ -257,16 +224,13 @@ public class MainActivity extends Activity {
     protected void onPause(){
         mIsPlaying = false;
         setPlayingStreamingMediaPlayer(false);
-        mGLView1.onPause();
         super.onPause();
     }
 
     @Override
     protected void onResume(){
         super.onResume();
-        if (mRadio2.isChecked()){
-            mGLView1.onResume();
-        }
+
     }
 
     /** 当活动即将销毁时调用 */
@@ -277,11 +241,6 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
-    private MyGLSurfaceView mGLView1;
-    private RadioButton mRadio1;
-    private RadioButton mRadio2;
-
-    public static native void createEngine();
     //create 创建 Streaming 流媒体 Media  Player播放
     //createStreamingMediaPlayer创建流媒体播放
     //以下为native方法
@@ -291,6 +250,7 @@ public class MainActivity extends Activity {
     public static native void shutdown();
     public static native void setSurface(Surface surface);
     public static native void rewindStreamingMediaPlayer();
+    public static native void pauseStreamingMediaPlayer();
 
     //程序启动时加载native-lib库
     static {
@@ -328,30 +288,5 @@ public class MainActivity extends Activity {
             setSurface(s);
         }
     }
-
-    static class GLViewVideoSink extends VideoSink{
-
-        private final MyGLSurfaceView mMyGLSurfaceView;
-
-        GLViewVideoSink(MyGLSurfaceView myGLSurfaceView){
-            mMyGLSurfaceView = myGLSurfaceView;
-        }
-
-        @Override
-        void setFixedSize(int width, int height) {
-
-        }
-
-        @Override
-        void useAsSinkForNative() {
-            SurfaceTexture st = mMyGLSurfaceView.getSurfaceTexture();
-            Surface s = new Surface(st);
-            setSurface(s);
-            s.release();
-        }
-    }
-
-
-
 
 }

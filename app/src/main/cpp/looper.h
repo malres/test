@@ -4,7 +4,6 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#define TEST_LOOPER_H
 
 struct loopermessage;
 

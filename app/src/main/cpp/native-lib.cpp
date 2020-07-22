@@ -138,6 +138,7 @@ void mylooper::handle(int what, void *obj) {
             d->sawInputEOS = true;
             d->sawOutputEOS = true;
         }break;
+
         case kMsgSeek:{
             workerdata *d = (workerdata*)obj;
             AMediaExtractor_seekTo(d->ex, 0, AMEDIAEXTRACTOR_SEEK_NEXT_SYNC);
@@ -151,6 +152,15 @@ void mylooper::handle(int what, void *obj) {
             }
             LOGV("seeked");
         }break;
+
+        case kMsgPause:{
+            workerdata *d = (workerdata*)obj;
+            if (d->isPlaying){
+                d->isPlaying = false;
+                post(kMsgPauseAck, NULL, true);
+            }
+        }break;
+
         case kMsgResume:{
             workerdata *d = (workerdata*)obj;
             if (!d->isPlaying){
@@ -161,14 +171,6 @@ void mylooper::handle(int what, void *obj) {
         }break;
     }
 }
-
-//extern "C" JNIEXPORT jstring JNICALL
-//Java_com_example_nativecodec_MainActivity_stringFromJNI(
-//        JNIEnv* env,
-//        jobject /* this */) {
-//    std::string hello = "Hello from C++";
-//    return env->NewStringUTF(hello.c_str());
-//}
 
 //extern "C" 表示以下方法按C语言的方式进行编译
 extern "C"{
@@ -250,11 +252,12 @@ extern "C"{
             jclass clazz, jboolean isPlaying){
         LOGV("@@@ playpause: %d", isPlaying);
         if (mlooper){
-            if (isPlaying){
-                mlooper->post(kMsgResume, &data);
-            } else{
-                mlooper->post(kMsgPause, &data);
-            }
+            mlooper->post(kMsgResume, &data);
+//            if (isPlaying){
+//
+//            } else{
+//
+//            }
         }
     }
 
@@ -292,6 +295,14 @@ extern "C"{
         LOGV("@@@ rewind");
         if (mlooper){
             mlooper->post(kMsgSeek, &data);
+        }
+    }
+
+    //暂停播放
+    void Java_com_example_nativecodec_MainActivity_pauseStreamingMediaPlayer(JNIEnv *env, jclass clazz){
+        LOGV("@@@ pause");
+        if (mlooper){
+            mlooper->post(kMsgPause, &data);
         }
     }
 

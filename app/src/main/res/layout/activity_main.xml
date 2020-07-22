@@ -34,14 +34,17 @@
             android:id="@+id/start_native"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/start_native"
-            />
+            android:text="@string/start_native" />
+        <Button
+            android:id="@+id/pause_native"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/pause_native"/>
         <Button
             android:id="@+id/rewind_native"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/rewind_native"
-            />
+            android:text="@string/rewind_native" />
     </LinearLayout>
 
 <!--    视频播放幕布-->
@@ -49,17 +52,10 @@
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
-
-        <RadioButton
-            android:id="@+id/radio1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="10dip"
-            />
         <SurfaceView
             android:id="@+id/surfaceview1"
-            android:layout_width="640px"
-            android:layout_height="480px"/>
+            android:layout_width="940px"
+            android:layout_height="680px"/>
     </LinearLayout>
 
 <!--    进度条-->
@@ -72,27 +68,5 @@
             android:layout_width="800px"
             android:layout_height="80px" />
     </LinearLayout>
-
-    //第二个幕布
-    <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <RadioButton
-            android:id="@+id/radio2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="10dip"
-            />
-        <com.example.nativecodec.MyGLSurfaceView
-            android:id="@+id/glsurfaceview1"
-            android:layout_width="640px"
-            android:layout_height="480px"
-            />
-
-    </LinearLayout>
-
-
 
 </LinearLayout>
