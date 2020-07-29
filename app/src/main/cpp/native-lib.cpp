@@ -36,7 +36,15 @@ typedef struct {
     bool renderonce;
 } workerdata;
 
-workerdata data = {-1,NULL,NULL,NULL,0, false, false, false, false};
+workerdata data = {-1,
+                   NULL,
+                   NULL,
+                   NULL,
+                   0,
+                   false,
+                   false,
+                   false,
+                   false};
 
 //enum：枚举。所谓枚举是指将变量的值一一列举出来，变量只限于列举出来的值的范围内取值。
 enum {
@@ -77,14 +85,14 @@ void doCodecWork(workerdata *d){
      * */
     ssize_t bufidx = -1;
     if(!d->sawInputEOS){
-        //获取缓冲区，设置超时为2000毫秒
+        //获取缓冲区，设置超时为2000毫秒     dequeueInputBuffer：申请可用的InputBuffer
         bufidx = AMediaCodec_dequeueInputBuffer(d->codec, 2000);
         LOGV("input buffer %zd", bufidx);
         if(bufidx >= 0){
             size_t bufsize;
             //取到缓冲区输入流
             auto buf = AMediaCodec_getInputBuffer(d->codec, bufidx, &bufsize);
-            //开始读取样本,d->ex已经设置了选中的轨道
+            //开始读取样本,通过readSampleData把视频轨道的数据按偏移量读取到ByteBuffer中
             auto sampleSize = AMediaExtractor_readSampleData(d->ex, buf ,bufsize);
             if(sampleSize < 0){
                 sampleSize = 0;
@@ -94,17 +102,31 @@ void doCodecWork(workerdata *d){
             //以微秒为单位返回当前样本的呈现时间
             auto presentationTimeUs = AMediaExtractor_getSampleTime(d->ex);
 
-            //将缓冲区传递至解码器
+            /**将缓冲区传递至解码器
+            //当MediaExtractor读不到数据时，则说明视频流已经到了结尾，此时使用MediaCodec.BUFFER_FLAG_END_OF_STREAM来告知解码器
+            //queueInputBuffer：往InputBuffer中填充解码前的数据
+            //queueInputBufferg格式（
+            // int index：数组的索引值
+            //int offset：写入buffer的起始位置
+            //int size：写入的输出的长度
+            //long presentationTimeUs：该数据显示的时间戳
+            //int flags：该数据的标记位，例如关键帧，结束帧等等)
+            */
             AMediaCodec_queueInputBuffer(d->codec, bufidx, 0 ,sampleSize, presentationTimeUs,
                     d->sawInputEOS ? AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM : 0);
-            //前进到下一个样本
+            //AMediaExtractor移动到下一取样处
             AMediaExtractor_advance(d->ex);
         }
     }
 
     if(!d->sawOutputEOS){
         AMediaCodecBufferInfo info;
-        //缓冲区第一步
+        /**         缓冲区第一步
+         * dequeueOutputBuffer：读取已经解码后的数据
+         * dequeueOutputBuffer格式：
+         * @NonNull BufferInfo info：这个BufferInfo需要自己手动创建，调用后，会把该索引的数据的信息写在里面
+         * long timeoutUs：等待时间
+         */
         auto status = AMediaCodec_dequeueOutputBuffer(d->codec, &info, 0);
         if(status >= 0){
             if(info.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM){
@@ -112,14 +134,12 @@ void doCodecWork(workerdata *d){
                 d->sawOutputEOS = true;
             }
             int64_t presentationNano = info.presentationTimeUs *1000;
-            if(d->renderstart < 0){
+            if(d->renderstart < 0){                                      //返回的是时间的纳秒值
                 d->renderstart = systemnanotime() - presentationNano;    //systemnanotime提供相对精确的计时，但不能用来计算当前日期
-                                                                         //返回的是时间的纳秒值
             }
             int64_t delay = (d->renderstart + presentationNano) - systemnanotime();
             if(delay > 0){
-                //延时操作，如果缓冲区里的可展示时间>当前视频播放的进度，就休眠一下
-                usleep(delay/1000);
+                usleep(delay/1000);//延时操作，如果缓冲区里的可展示时间>当前视频播放的进度，就休眠一下
             }
             //渲染，如果info.size != 0等于true，就会渲染到surface上第二步
             AMediaCodec_releaseOutputBuffer(d->codec, status, info.size != 0);
@@ -161,6 +181,7 @@ void mylooper::handle(int what, void *obj) {
             AMediaExtractor_delete(d->ex);
             d->sawInputEOS = true;
             d->sawOutputEOS = true;
+            LOGV("关机");
         }break;
 
         case kMsgSeek:{
@@ -200,7 +221,8 @@ void mylooper::handle(int what, void *obj) {
 extern "C"{
     //jboolean JNI中的变量类型        JNIEnv* 引用JNIenv指针
     jboolean Java_com_example_nativecodec_MainActivity_createStreamingMediaPlayer(JNIEnv* env,
-            jclass clazz, jobject assetMgr, jstring filename){
+            jclass clazz, jobject assetMgr, jstring filename)
+            {
         LOGV("@@@ create");
 
         //string转UTF-8
@@ -242,19 +264,22 @@ extern "C"{
 
         LOGV("input has %d tracks", numtracks);
         for (int i = 0; i < numtracks; ++i) {
+            //MediaExtractor分离音频视频，然后通过getTrackFormat获取track的MediaFormat
             AMediaFormat *format = AMediaExtractor_getTrackFormat(ex, i);
             const char *s = AMediaFormat_toString(format);
             LOGV("track %d format: %s", i, s);
-            const char *mime;
+
+            const char *mime;   //  mime:"video/avc"：264格式的编解码
             if (!AMediaFormat_getString(format, AMEDIAFORMAT_KEY_MIME, &mime)){
                 LOGV("no mime type");
                 return JNI_FALSE;
-            } else if (!strncmp(mime, "video/", 6)){
-
-                //生产代码应检查错误
+            }else if (!strncmp(mime, "video/", 6)){
+                //selectTrack可以选择指定的track通道
                 AMediaExtractor_selectTrack(ex, i);
                 codec = AMediaCodec_createDecoderByType(mime);
-                AMediaCodec_configure(codec, format, d->window, NULL, 0);//d->window 与解码器绑定
+                //configure：对编码器(mediacodec)进行配置
+                //format:解码的媒体格式   d->window:绑定surface  crypto:加密算法 flags:加密的格式
+                AMediaCodec_configure(codec, format, d->window, NULL, 0);
                 d->ex = ex;//视频轨道
                 d->codec = codec;//解码器
                 d->renderstart = -1;//开始渲染时间
@@ -262,9 +287,8 @@ extern "C"{
                 d->sawOutputEOS = false;
                 d->isPlaying = false;
                 d->renderonce = true;
-                AMediaCodec_start(codec);//开始解码
+                AMediaCodec_start(codec);//调用start进入执行状态,开始解码
             }
-            //MediaFormat 最小的音频格式
             AMediaFormat_delete(format);
         }
 
@@ -280,11 +304,6 @@ extern "C"{
         LOGV("@@@ playpause: %d", isPlaying);
         if (mlooper){
             mlooper->post(kMsgResume, &data);
-//            if (isPlaying){
-//
-//            } else{
-//
-//            }
         }
     }
 
