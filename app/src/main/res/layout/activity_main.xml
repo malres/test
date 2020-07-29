@@ -49,24 +49,35 @@
 
 <!--    视频播放幕布-->
     <LinearLayout
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
         <SurfaceView
             android:id="@+id/surfaceview1"
             android:layout_width="940px"
             android:layout_height="680px"/>
+<!--        <SeekBar-->
+<!--            android:id="@+id/seek_bar"-->
+<!--            android:layout_width="800px"-->
+<!--            android:layout_height="80px" />-->
     </LinearLayout>
 
 <!--    进度条-->
     <LinearLayout
-        android:orientation="horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
-
-        <androidx.appcompat.widget.AppCompatSeekBar
-            android:layout_width="800px"
-            android:layout_height="80px" />
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:padding="20dp"
+        android:orientation="vertical">
+        <TextView
+            android:id="@+id/tv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#ff0000" />
+        <SeekBar
+            android:id="@+id/sb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
     </LinearLayout>
+
 
 </LinearLayout>
