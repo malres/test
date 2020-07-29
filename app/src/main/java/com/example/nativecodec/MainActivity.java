@@ -3,7 +3,9 @@ package com.example.nativecodec;
 
 import android.app.Activity;
 import android.content.res.AssetManager;
-import android.graphics.SurfaceTexture;
+import android.media.MediaCodec;
+import android.media.MediaFormat;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Surface;
@@ -13,7 +15,9 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 
 public class MainActivity extends Activity {
@@ -21,18 +25,21 @@ public class MainActivity extends Activity {
 
     String mSourceString = null;
 
+    MediaFormat mediaFormat;
+
     SurfaceView mSurfaceView1;          //surface的view
     SurfaceHolder mSurfaceHolder1;      //一个接口，surface的监听器，提供访问和控制surfaceview背后的surface相关的方法
 
     VideoSink mSelectedVideoSink;
-    VideoSink mNativeCodecPlayerVideoSink;
+    VideoSink mNativeCodecPlayerVideoSink;  //用于存放播放的视频
 
     SurfaceHolderVideoSink mSurfaceHolder1VideoSink;
-    //GLSurfaceView继承自SurfaceView,对SurfaceView再次封装，方便在安卓中使用OpenGL
+
+    TextView tv;
+    SeekBar sb;
 
     boolean mCreated = false;
     boolean mIsPlaying = false;
-
 
 
     //Activity生命周期的开始
@@ -44,7 +51,6 @@ public class MainActivity extends Activity {
         super.onCreate(icicle);
         setContentView(R.layout.activity_main);
 
-        //设置surface1接收器
         //使用Android的findViewById查找到第一块幕布的所在地，并赋值给mSurfaceView1
         mSurfaceView1 = (SurfaceView) findViewById(R.id.surfaceview1);
         mSurfaceHolder1 = mSurfaceView1.getHolder();
@@ -57,7 +63,7 @@ public class MainActivity extends Activity {
             //启动
             @Override
             public void surfaceCreated(SurfaceHolder holder) {
-                Log.v(TAG,"surfaceCreated");
+                Log.v(TAG, "surfaceCreated");
                 setSurface(holder.getSurface());
             }
 
@@ -65,12 +71,13 @@ public class MainActivity extends Activity {
             @Override
             public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
                 Log.v(TAG, "surfaceChanged format=" + format + ", width=" + width + ", height="
-                 + height);
+                        + height);
             }
+
             //释放
             @Override
             public void surfaceDestroyed(SurfaceHolder holder) {
-                Log.v(TAG,"surfaceDestroyed");
+                Log.v(TAG, "surfaceDestroyed");
             }
         });
 
@@ -118,22 +125,10 @@ public class MainActivity extends Activity {
         Log.i("@@@", "glview pause");
         switchSurface();
 
-        //toggle()：防止setOnCheckedChangeListener调用多次方法
-        //与单选按钮相比，suefaces更容易成为目标
-        //以下为surfaceview1的监听事件
-        mSurfaceView1.setOnClickListener(new View.OnClickListener()
-        {
-            @Override
-            public void onClick(View v) {
-            }
-        });
-
-
         //初始化按钮单击处理
         //native MediaPlayer start
         //通过findViewById找到start_native并给它设置一个点击监听事件
-        ((Button) findViewById(R.id.start_native)).setOnClickListener(new View.OnClickListener()
-        {
+        ((Button) findViewById(R.id.start_native)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (!mCreated) {
@@ -148,7 +143,7 @@ public class MainActivity extends Activity {
                         mCreated = createStreamingMediaPlayer(getResources().getAssets(), mSourceString);
                     }
                 }
-                if (mCreated){
+                if (mCreated) {
                     mIsPlaying = !mIsPlaying;
                     setPlayingStreamingMediaPlayer(mIsPlaying);
                 }
@@ -157,11 +152,11 @@ public class MainActivity extends Activity {
 
         //native MediaPlayer rewind
         //通过rewind_native找到按钮rewind_native并设置一个监听事件
-        ((Button) findViewById(R.id.rewind_native)).setOnClickListener(new View.OnClickListener(){
+        ((Button) findViewById(R.id.rewind_native)).setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
-                if (mNativeCodecPlayerVideoSink != null){
+                if (mNativeCodecPlayerVideoSink != null) {
                     rewindStreamingMediaPlayer();  //此语句用于视频倒带
                 }
             }
@@ -172,36 +167,45 @@ public class MainActivity extends Activity {
         ((Button) findViewById(R.id.pause_native)).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mNativeCodecPlayerVideoSink != null){
+                if (mNativeCodecPlayerVideoSink != null) {
                     pauseStreamingMediaPlayer();
                 }
             }
         });
 
+        /**
+         * 进度条监听
+         */
+        tv = (TextView)findViewById(R.id.tv);
+        sb = (SeekBar)findViewById(R.id.sb);
+        sb.setMax(200);
+        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar p1, int p2, boolean p3) {
+                tv.setText("播放时间：" + p2);
+//                sb.setSecondaryProgress(p1.getProgress() + p2);
+                sb.setSecondaryProgress(p1.getProgress() - p2);
+//                tv.setText(tv.getText() + "剩余时间：" + (p2 + 40));
+                tv.setText(tv.getText() + "剩余时间：" + (p2 - 40));
+            }
 
-        //关于seekbar的方法
-//        ((SeekBar)findViewById(R.id.seekbar_1)).setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-//            //进度条开始拖动的时候调用
-//            @Override
-//            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-//                int process = seekBar.getProgress();
-//                System.out.println(process);
-//            }
-//
-//            //进度条改变的时候调用
-//            @Override
-//            public void onStartTrackingTouch(SeekBar seekBar) {
-//                System.out.println("start:=>" + seekBar.getProgress());
-//            }
-//
-//            //进度条停止拖动的时候调用
-//            @Override
-//            public void onStopTrackingTouch(SeekBar seekBar) {
-//                System.out.println("stop:=>" + seekBar.getProgress());
-//            }
-//        });
+            @Override
+            public void onStartTrackingTouch(SeekBar p1) {
+                tv.setText("开始拖动");
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar p1) {
+                tv.setText("停止拖动");
+            }
+        });
 
     }
+
+
+    private MediaPlayer mediaPlayer;
+
+
 
     void switchSurface(){
         if (mCreated && mNativeCodecPlayerVideoSink != mSelectedVideoSink){
@@ -213,6 +217,7 @@ public class MainActivity extends Activity {
             mNativeCodecPlayerVideoSink = mSelectedVideoSink;
             if (mSourceString != null){
                 Log.i("@@@", "recreating player");
+                //读取文件
                 mCreated = createStreamingMediaPlayer(getResources().getAssets(), mSourceString);
                 mIsPlaying = false;
             }
@@ -281,6 +286,7 @@ public class MainActivity extends Activity {
             mSurfaceHolder.setFixedSize(width, height);
         }
 
+        //通过useAsSinkForNative调用setSurface(),将方法传入到native-lib中
         @Override
         void useAsSinkForNative(){
             Surface s = mSurfaceHolder.getSurface();
