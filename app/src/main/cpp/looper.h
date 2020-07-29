@@ -8,8 +8,7 @@
 struct loopermessage;
 
 class looper {
-    public:
-        looper();
+    public:looper();
         looper& operator = (const looper& ) = delete;
         looper(looper&) = delete;
         virtual ~looper();
