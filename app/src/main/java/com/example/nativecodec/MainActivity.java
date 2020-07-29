@@ -173,37 +173,9 @@ public class MainActivity extends Activity {
             }
         });
 
-        /**
-         * 进度条监听
-         */
-        tv = (TextView)findViewById(R.id.tv);
-        sb = (SeekBar)findViewById(R.id.sb);
-        sb.setMax(200);
-        sb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar p1, int p2, boolean p3) {
-                tv.setText("播放时间：" + p2);
-//                sb.setSecondaryProgress(p1.getProgress() + p2);
-                sb.setSecondaryProgress(p1.getProgress() - p2);
-//                tv.setText(tv.getText() + "剩余时间：" + (p2 + 40));
-                tv.setText(tv.getText() + "剩余时间：" + (p2 - 40));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar p1) {
-                tv.setText("开始拖动");
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar p1) {
-                tv.setText("停止拖动");
-            }
-        });
-
     }
 
 
-    private MediaPlayer mediaPlayer;
 
 
 
@@ -249,7 +221,6 @@ public class MainActivity extends Activity {
     //create 创建 Streaming 流媒体 Media  Player播放
     //createStreamingMediaPlayer创建流媒体播放
     //以下为native方法
-
     public static native boolean  createStreamingMediaPlayer(AssetManager asstMgr, String filename);
     public static native void setPlayingStreamingMediaPlayer(boolean isPlaying);
     public static native void shutdown();
